@@ -42,6 +42,16 @@ class Person
   
   include Leap
   decide :lucky_number, :with => :characteristics do
+    committee :favorite_food do
+      quorum 'from age', :needs => :age do |characteristics|
+        "Prunes" if characteristics[:age] >= 5
+      end
+      
+      default do
+        "Pizza"
+      end
+    end
+    
     committee :lucky_number do
       quorum 'super magic method', :needs => [:magic_integer, :magic_float] do |characteristics|
         characteristics[:magic_integer] + characteristics[:magic_float].ceil
@@ -60,7 +70,7 @@ class Person
       quorum 'ninja style', :needs => :age do |characteristics|
         characteristics[:age] + 1
       end
-
+      
       default :complies => :ipa do
         0
       end

@@ -12,5 +12,3 @@ module Leap
     end
   end
 end
-      
-

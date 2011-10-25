@@ -24,7 +24,6 @@ module Leap
     # @return [Array]
     def compliance
       reports.map(&:quorum).map(&:compliance).inject do |memo, c|
-        next c unless memo
         memo & c
       end
     end
