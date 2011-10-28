@@ -6,12 +6,30 @@ class TestLeap < Test::Unit::TestCase
       @person = Person.new
     end
     
-    should 'still have a lucky number' do
-      assert_equal 0, @person.lucky_number
-    end
+    # WARNING: calling '@person.traits' more than once clears all reports
     
     should 'naturally receive an International Psychics Association-compliant lucky number' do
-      assert_equal [:ipa], @person.deliberations[:lucky_number].compliance
+      assert_equal 0, @person.deliberations[:traits].characteristics[:lucky_number]
+      assert_equal [:ipa], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.compliance
+    end
+    
+    # Although the :favorite_food 'from sweet tooth' quorum has the potential to comply with :iga,
+    # it should only comply if the :sweet_tooth calculation complied with :iga
+    should 'naturally receive a non International Gastronomics Association-compliant favorite food' do
+      assert_equal "Ice cream", @person.deliberations[:traits].characteristics[:favorite_food]
+      assert_equal [], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :favorite_food }.quorum.compliance
+    end
+    
+    should 'receive only IPA-compliant characteristics if it requests an IPA-compliant lucky number' do
+      @person.traits(:comply => :ipa)
+      assert_equal(@person.characteristics, {:magic_integer => 0, :lucky_number => 0})
+      assert_equal [:ipa], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :magic_integer }.quorum.compliance
+      assert_equal [:ipa], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.compliance
+    end
+    
+    should 'receive nothing if it requests an IGA-compliant favorite food' do
+      @person.traits(:comply => :iga)
+      assert_equal(@person.characteristics, {})
     end
   end
   
@@ -19,22 +37,36 @@ class TestLeap < Test::Unit::TestCase
     setup do
       @person = Person.new :age => 5
     end
-    
-    should 'indeed have a lucky number' do
-      assert_equal 36, @person.lucky_number
+     
+    # Although the :lucky_number 'normal magic method' has the potential to comply with :ipa,
+    # it should only comply if the :magic_integer calculation complied with :ipa
+    should 'naturally receive a non IPA-compliant lucky number' do
+      assert_equal 36, @person.deliberations[:traits].characteristics[:lucky_number]
+      assert_equal [], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.compliance
     end
     
-    should 'nevertheless remember how his lucky number was determined' do
-      assert_equal(@person.deliberations[:lucky_number].characteristics, { :favorite_food => "Prunes", :magic_integer => 6, :lucky_number => 36, :age => 5, :litmus => {}})
-      assert_equal 'ninja style', @person.deliberations[:lucky_number].reports.find{ |r| r.committee.name == :magic_integer }.quorum.name
+    should 'instead receive an IPA-compliant lucky number if requested' do
+      @person.traits(:comply => :ipa)
+      assert_equal(@person.characteristics, {:age => 5, :magic_integer => 0, :lucky_number => 0})
+      assert_equal [:ipa], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.compliance
+    end
+    
+    # WTF?! the :sweet_tooth committee returns true but characteristics[:sweet_tooth] is false
+    should 'naturally receive an IGA-compliant favorite food' do
+      assert_equal "Pizza", @person.deliberations[:traits].characteristics[:favorite_food]
+      assert_equal [:iga], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :favorite_food }.quorum.compliance
+    end
+    
+    # WTF?! why are we using the default committee for :sweet_tooth when :age is available?
+    should 'remember how his lucky number and favorite food were determined' do
+      assert_equal 'ninja style', @person.deliberations[:traits].reports.find{ |r| r.committee.name == :magic_integer }.quorum.name
+      assert_equal 'normal magic method', @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.name
+      assert_equal 'from age', @person.deliberations[:traits].reports.find{ |r| r.committee.name == :sweet_tooth }.quorum.name
+      assert_equal 'from sweet tooth', @person.deliberations[:traits].reports.find{ |r| r.committee.name == :favorite_food }.quorum.name
     end
     
     should 'only give quorums what they ask for' do
-      assert_equal({}, @person.deliberations[:lucky_number].reports.find{ |r| r.committee.name == :litmus }.conclusion)
-    end
-    
-    should 'not receive an International Psychics Association-compliant lucky number unless he asks for it' do
-      assert_equal [], @person.deliberations[:lucky_number].compliance
+      assert_equal({}, @person.deliberations[:traits].reports.find{ |r| r.committee.name == :litmus }.conclusion)
     end
   end
   
@@ -44,7 +76,7 @@ class TestLeap < Test::Unit::TestCase
     end
     
     should 'be able to use his own magic integer in determining his lucky number' do
-      assert_equal 1764, @person.lucky_number
+      assert_equal 1764, @person.deliberations[:traits].characteristics[:lucky_number]
     end
   end
   
@@ -54,11 +86,13 @@ class TestLeap < Test::Unit::TestCase
     end
     
     should 'have access to the super magic method' do
-      assert_equal 1, @person.lucky_number
+      assert_equal 1, @person.deliberations[:traits].characteristics[:lucky_number]
     end
     
     should 'be able to stay in compliance with International Psychics Association guidelines' do
-      assert_equal 0, @person.lucky_number(:comply => :ipa)
+      @person.traits(:comply => :ipa)
+      assert_equal 0, @person.characteristics[:lucky_number]
+      assert_equal [:ipa], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.compliance
     end
   end
   
@@ -107,6 +141,7 @@ class TestLeap < Test::Unit::TestCase
     end
   end
   
+  # I don't think this test applies any more - a Person's :traits decision doesn't really have a goal
   context "A difficult decision" do
     setup do
       @person = Person.new :name => 'Bozo'
@@ -114,7 +149,7 @@ class TestLeap < Test::Unit::TestCase
     
     should 'provide details about its apparent impossibility' do
       exception = assert_raise ::Leap::NoSolutionError do
-        @person.lucky_number :comply => :zeus
+        @person.traits :comply => :zeus
       end
       
       assert_match(/No solution was found for "lucky_number"/, exception.message)

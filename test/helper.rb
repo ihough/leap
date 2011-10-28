@@ -41,14 +41,20 @@ class Person
   end
   
   include Leap
-  decide :lucky_number, :with => :characteristics do
+  decide :traits, :with => :characteristics do
     committee :favorite_food do
-      quorum 'from age', :needs => :age do |characteristics|
-        "Prunes" if characteristics[:age] >= 5
+      quorum 'from sweet tooth', :needs => [:sweet_tooth, :age], :complies => :iga do |characteristics|
+        characteristics[:sweet_tooth] ? "Ice cream" : "Pizza"
+      end
+    end
+    
+    committee :sweet_tooth do
+      quorum 'from age', :needs => :age, :complies => :iga do |characteristics|
+        characteristics[:age] < 5 ? true : false
       end
       
       default do
-        "Pizza"
+        true
       end
     end
     
@@ -83,7 +89,7 @@ class Person
     end
     
     committee :litmus do
-      quorum 'litmus', :appreciates => :dummy, :complies => :ipa do |characteristics|
+      quorum 'litmus', :appreciates => :dummy do |characteristics|
         characteristics
       end
     end
