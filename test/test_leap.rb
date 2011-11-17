@@ -51,13 +51,11 @@ class TestLeap < Test::Unit::TestCase
       assert_equal [:ipa], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.compliance
     end
     
-    # WTF?! the :sweet_tooth committee returns true but characteristics[:sweet_tooth] is false
     should 'naturally receive an IGA-compliant favorite food' do
       assert_equal "Pizza", @person.deliberations[:traits].characteristics[:favorite_food]
       assert_equal [:iga], @person.deliberations[:traits].reports.find{ |r| r.committee.name == :favorite_food }.quorum.compliance
     end
     
-    # WTF?! why are we using the default committee for :sweet_tooth when :age is available?
     should 'remember how his lucky number and favorite food were determined' do
       assert_equal 'ninja style', @person.deliberations[:traits].reports.find{ |r| r.committee.name == :magic_integer }.quorum.name
       assert_equal 'normal magic method', @person.deliberations[:traits].reports.find{ |r| r.committee.name == :lucky_number }.quorum.name

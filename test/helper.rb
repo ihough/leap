@@ -43,18 +43,19 @@ class Person
   include Leap
   decide :traits, :with => :characteristics do
     committee :favorite_food do
-      quorum 'from sweet tooth', :needs => [:sweet_tooth, :age], :complies => :iga do |characteristics|
-        characteristics[:sweet_tooth] ? "Ice cream" : "Pizza"
+      quorum 'from sweet tooth', :needs => :sweet_tooth, :complies => :iga do |characteristics|
+        characteristics[:sweet_tooth] == "sweet" ? "Ice cream" : "Pizza"
       end
     end
     
+    # NOTE: sweet_tooth can't be boolean b/c if a quorum returns 'false' it gets interpreted as failure and tries the next quorum
     committee :sweet_tooth do
       quorum 'from age', :needs => :age, :complies => :iga do |characteristics|
-        characteristics[:age] < 5 ? true : false
+        characteristics[:age] < 5 ? "sweet" : "savory"
       end
       
       default do
-        true
+        "sweet"
       end
     end
     
